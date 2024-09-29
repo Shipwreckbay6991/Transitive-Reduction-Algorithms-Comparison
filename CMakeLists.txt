@@ -9,4 +9,8 @@ add_executable(AlgorithmProject main.cpp
         FinalGraph.h
         GraphParser.cpp
         GraphParser.h
+        Verifier.cpp
+        Verifier.h
+        TimeMeasurer.cpp
+        TimeMeasurer.h
 )

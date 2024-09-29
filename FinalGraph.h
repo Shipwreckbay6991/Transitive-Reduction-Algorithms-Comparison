@@ -1,5 +1,5 @@
 //
-// The Final graph is a concise notation of graph designed for IO,
+// FinalGraph is a concise notation of graph designed for IO,
 // which is more convenient to communicate with graph generator and visualizer written in Kotlin.
 //
 #include <cstdint>

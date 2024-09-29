@@ -1,5 +1,5 @@
 //
-// Created by Leah on 2024/8/14.
+// IntermediateGraph is a graph with extra attributes to store information during transitive reduction computation
 //
 
 #ifndef ALGORITHMPROJECT_INTERMEDIATEGRAPH_H
@@ -21,42 +21,31 @@ public:
     std::vector<IntermediateNode*> startingNodes;
     std::vector<IntermediateNode*> nodes;
     std::vector<IntermediateEdge*> edges;
-
-//    IntermediateNode* createStartingNode();
-//
-//    IntermediateNode* appendNode(IntermediateNode* baseNode);
-//
-//    void createEdge(IntermediateNode* startNode, IntermediateNode* endNode);
+    // <intermediateEdge, whether it's added via In-Node> Just for verification purpose
+    std::vector<std::pair<IntermediateEdge*, bool>> sortedEdgePairs;
 
     void markRedundantEdges_DFS();
 
-    void markRedundantEdges_TROPlus();
+    void markRedundantEdges_TROPlus(bool withVerification);
 
-//    void removeRedundantEdges_DFS();
-//
-//    void removeRedundantEdges_TROPlus();
+    void topoSort();
+
 
 private:
-
-    std::uint64_t nextNodeId = 1;
-    std::uint64_t nextEdgeId = 1;
     std::uint64_t current = 0;
     std::uint64_t numberOfIntervals = 1600;
     std::uint64_t numberOfHashValues = 160;
     std::map<IntermediateNode*, IntermediateNode*> gMap;
-    std::vector<IntermediateNode*> visitedInQuery;
-    std::vector<std::pair<IntermediateNode*, IntermediateNode*>> DFS_RI;
+    std::set<IntermediateNode*> visitedInQuery;
+    std::set<std::pair<IntermediateNode*, IntermediateNode*>> DFS_RI;
 
-
-    //for transitive reduction based on DFS
     void constructDFSRI();
 
     void dfsUtil(IntermediateNode* nodeA, IntermediateNode* nodeB);
 
-    //for transitive reduction based on DFS
     bool isReachable_BFL(IntermediateNode* a, IntermediateNode* b);
 
-    void assignPostOrder(IntermediateNode* node);
+    void postOrderTraverse(IntermediateNode* node);
 
     std::uint64_t hash(IntermediateNode* node);
 
@@ -70,8 +59,6 @@ private:
     void constructBFLRI();
 
     bool queryReachability_BFL(IntermediateNode* a, IntermediateNode* b);
-
-    void topoSort();
 
     bool isRedundant_TROPlus(IntermediateEdge* edge);
 };
@@ -108,6 +95,9 @@ public:
 
 };
 
+/**
+ * extra attributes for TRO-plus (in/out-degrees, is in/out-node)
+ */
 class IntermediateNodeWrapper {
 public:
     IntermediateNode* node;

@@ -1,7 +1,3 @@
-//
-// This graph parser is used to parse between FinalGraph and IntermediateGraph as well as
-// import/export of FinalGraph to txt files
-//
 
 #include "GraphParser.h"
 #include <fstream>
