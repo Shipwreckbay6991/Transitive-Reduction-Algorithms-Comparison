@@ -7,20 +7,16 @@
 #include <cmath>
 #include <memory>
 #include <algorithm>
+#include <unordered_set>
 
 
-/**
- * DFS Reachability Index construction
- */
 void IntermediateGraph::constructDFSRI() {
     for (IntermediateNode* node: nodes) {
         dfsUtil(node, node);
     }
 }
 
-/**
- * DFS Reachability Index construction recursive helper
- */
+
 void IntermediateGraph::dfsUtil(IntermediateNode* nodeA, IntermediateNode* nodeB) {
     DFS_RI.insert(std::make_pair(nodeA, nodeB));
     for (IntermediateEdge* edge: nodeB->outgoingEdges) {
@@ -31,12 +27,8 @@ void IntermediateGraph::dfsUtil(IntermediateNode* nodeA, IntermediateNode* nodeB
     }
 }
 
-/**
- * mark the redundant edges using DFS
- */
-void IntermediateGraph::markRedundantEdges_DFS() {
-    constructDFSRI();
 
+void IntermediateGraph::markRedundantEdges_DFS() {
     //    For each vertex u in the graph:
     //    For each of its successors v:
     //    Check if there's a path from any other successor w of u to v
@@ -46,8 +38,9 @@ void IntermediateGraph::markRedundantEdges_DFS() {
             for (IntermediateEdge* edge2: node->outgoingEdges) {
                 if (edge1 != edge2
                     && !(edge2->isRedundant_DFS)
-                    && DFS_RI.find(std::make_pair(edge2->endNode, edge1->endNode)) !=
-                       DFS_RI.end()) {
+                    //                    && queryReachability_BFL(edge2->endNode, edge1->endNode)) // for BFL+ RI query
+                    && DFS_RI.find(std::make_pair(edge2->endNode, edge1->endNode)) != DFS_RI.end()) // for DFS_RI query
+                {
                     edge1->isRedundant_DFS = true;
                     break;
                 }
@@ -56,7 +49,7 @@ void IntermediateGraph::markRedundantEdges_DFS() {
     }
 }
 
-//for transitive reduction based on TR-O+
+
 void IntermediateGraph::constructBFLRI() {
     //traversed the graph and assign discoverTime and finishTime to each node
     for (IntermediateNode* node: startingNodes) {
@@ -107,18 +100,22 @@ void IntermediateGraph::postOrderTraverse(IntermediateNode* node) {
     node->finishTime = current;
 }
 
-uint64_t IntermediateGraph::hash(IntermediateNode* node) {
+uint64_t hashIntermediateNode(IntermediateNode* node) {
     uint64_t x = node->id;
     x = (x ^ (x >> 30)) * UINT64_C(0xbf58476d1ce4e5b9);
     x = (x ^ (x >> 27)) * UINT64_C(0x94d049bb133111eb);
     x = x ^ (x >> 31);
 
-    return (x % (numberOfHashValues)) + 1;
+    return x;
+}
+
+uint64_t IntermediateGraph::hash(IntermediateNode* node) {
+    return (hashIntermediateNode(node) % (numberOfHashValues)) + 1;
 }
 
 void IntermediateGraph::computeLabelOut(IntermediateNode* node) {
-    node->LabelOut = std::make_unique<std::set<uint64_t>>
-            (std::set < uint64_t > {hash(gMap.find(node)->second)});
+    node->LabelOut = std::make_unique<std::unordered_set<uint64_t>>
+            (std::unordered_set < uint64_t > {hash(gMap.find(node)->second)});
     for (IntermediateEdge* edge: node->outgoingEdges) {
         if (edge->endNode->LabelOut == nullptr) {
             computeLabelOut(edge->endNode);
@@ -129,8 +126,8 @@ void IntermediateGraph::computeLabelOut(IntermediateNode* node) {
 }
 
 void IntermediateGraph::computeLabelIn(IntermediateNode* node) {
-    node->LabelIn = std::make_unique<std::set<uint64_t>>
-            (std::set < uint64_t > {hash(gMap.find(node)->second)});
+    node->LabelIn = std::make_unique<std::unordered_set<uint64_t>>
+            (std::unordered_set < uint64_t > {hash(gMap.find(node)->second)});
     for (IntermediateEdge* edge: node->incomingEdges) {
         if (edge->startNode->LabelIn == nullptr) {
             computeLabelIn(edge->startNode);
@@ -162,8 +159,8 @@ bool IntermediateGraph::isReachable_BFL(IntermediateNode* a, IntermediateNode* b
     }
 }
 
-bool IntermediateGraph::isSubset(const std::unique_ptr<std::set<uint64_t>> &setA,
-                                 const std::unique_ptr<std::set<uint64_t>> &setB) {
+bool IntermediateGraph::isSubset(const std::unique_ptr<std::unordered_set<uint64_t>> &setA,
+                                 const std::unique_ptr<std::unordered_set<uint64_t>> &setB) {
     if (!setA || !setB) return false;
     return std::includes(setB->begin(), setB->end(), setA->begin(), setA->end());
 }
@@ -196,27 +193,26 @@ void IntermediateGraph::topoSort() {
 
 }
 
+/**
+ * @brief An alternative approach way for edge redundancy check. Specified in project report Algorithm 3.
+ */
 //bool IntermediateGraph::isRedundant_TROPlus(IntermediateEdge* edge) {
 //    //select the faster way based on comparison between in-degree of end node and out-degree of starting node
 //    //if the starting node can reach end node via another node, the edge is redundant
-//    uint64_t queryCallsStartingNode = 0;
-//    uint64_t queryCallsEndNode = 0;
 //    std::vector<IntermediateEdge*> incomingEdgesToCheck;
 //    std::vector<IntermediateEdge*> outgoingEdgesToCheck;
-//    for(IntermediateEdge* incomingEdge: edge->endNode->incomingEdges){
-//        if(!incomingEdge->isRedundant_TROPlus && incomingEdge->startNode->topoOrder > edge->startNode->topoOrder){
-//            queryCallsEndNode++;
+//    for (IntermediateEdge* incomingEdge: edge->endNode->incomingEdges) {
+//        if (!incomingEdge->isRedundant_TROPlus && incomingEdge->startNode->topoOrder > edge->startNode->topoOrder) {
 //            incomingEdgesToCheck.push_back(incomingEdge);
 //        }
 //    }
-//    for(IntermediateEdge* outgoingEdge: edge->startNode->outgoingEdges){
-//        if(!outgoingEdge->isRedundant_TROPlus && outgoingEdge->endNode->topoOrder < edge->endNode->topoOrder){
-//            queryCallsEndNode++;
+//    for (IntermediateEdge* outgoingEdge: edge->startNode->outgoingEdges) {
+//        if (!outgoingEdge->isRedundant_TROPlus && outgoingEdge->endNode->topoOrder < edge->endNode->topoOrder) {
 //            outgoingEdgesToCheck.push_back(outgoingEdge);
 //        }
 //    }
 //
-//    if (queryCallsStartingNode > queryCallsEndNode) {
+//    if (outgoingEdgesToCheck.size() > incomingEdgesToCheck.size()) {
 //        for (IntermediateEdge* incomingEdge: incomingEdgesToCheck) {
 //            return queryReachability_BFL(edge->startNode, incomingEdge->startNode);
 //        }
@@ -248,11 +244,10 @@ bool IntermediateGraph::isRedundant_TROPlus(IntermediateEdge* edge) {
 }
 
 void IntermediateGraph::markRedundantEdges_TROPlus(bool withVerification) {
-    constructBFLRI();
     topoSort();
 
-
     std::vector<IntermediateEdge*> sortedEdges;
+    std::unordered_set < uint64_t > edgeIDSet;
     std::vector<IntermediateNodeWrapper*> nodeWrappers;
 
     //sort nodes based on in-degree or out-degree in ascending order
@@ -279,9 +274,9 @@ void IntermediateGraph::markRedundantEdges_TROPlus(bool withVerification) {
                       });
             // add edges in the sorted edges vectors if they do not already exist and keep track of whether they are In-Node or Out-Node
             for (IntermediateEdge* edge: nodeWrapper->node->incomingEdges) {
-                auto it = std::find(sortedEdges.begin(), sortedEdges.end(), edge);
-                if (it == sortedEdges.end()) {
+                if (!edgeIDSet.contains(edge->id)) {
                     sortedEdges.push_back(edge);
+                    edgeIDSet.emplace(edge->id);
                     if (withVerification) {
                         sortedEdgePairs.emplace_back(edge, true);
                     }
@@ -296,9 +291,9 @@ void IntermediateGraph::markRedundantEdges_TROPlus(bool withVerification) {
                       });
             // add edges in the sorted edges vectors if they do not already exist and keep track of whether they are In-Node or Out-Node
             for (IntermediateEdge* edge: nodeWrapper->node->outgoingEdges) {
-                auto it = std::find(sortedEdges.begin(), sortedEdges.end(), edge);
-                if (it == sortedEdges.end()) {
+                if (!edgeIDSet.contains(edge->id)) {
                     sortedEdges.push_back(edge);
+                    edgeIDSet.emplace(edge->id);
                     if (withVerification) {
                         sortedEdgePairs.emplace_back(edge, false);
                     }

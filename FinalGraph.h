@@ -1,10 +1,16 @@
-//
-// FinalGraph is a concise notation of graph designed for IO,
-// which is more convenient to communicate with graph generator and visualizer written in Kotlin.
-//
+
+/**
+ * @file FinalGraph.h
+ * @brief This file contains the definition of FinalGraph, FinalNode and FinalEdge,
+ * which is a streamlined format of intermediateGraph/Node/Edge,
+ * thus more convenient to communicate with graph generator and visualizer written as separate programs.
+ */
 #include <cstdint>
 #include <vector>
 
+/**
+ *
+ */
 struct FinalNode {
     std::uint64_t id;
 };
